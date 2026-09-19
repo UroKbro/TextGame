@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Optional
 from config import SAVE_FILE_PATH
 import graphics as gfx
 from combat import CombatManager
+from input_utils import read_action_input, read_valid_input, validate_action_text
 
 if TYPE_CHECKING:
     from engine import TextAdventureEngine
@@ -44,9 +45,13 @@ def manage_inventory(engine: TextAdventureEngine):
         ], width=w, border_color=gfx.YELLOW))
         
         print(f"\n{gfx.BOLD}Enter item number to use/equip, or [0] to exit inventory:{gfx.RESET}")
-        choice = input(f"{gfx.BRIGHT_YELLOW}Inventory # > {gfx.RESET}").strip()
-        
-        if not choice.isdigit() or choice == "0":
+        choice = read_valid_input(
+            f"{gfx.BRIGHT_YELLOW}Inventory # > {gfx.RESET}",
+            ["0"],
+            numeric_range=range(1, len(st.inventory) + 1),
+        )
+
+        if choice == "0":
             break
             
         idx = int(choice) - 1
@@ -154,11 +159,18 @@ def main():
     print(f"\n{gfx.BRIGHT_WHITE}{gfx.BOLD}Welcome to the Enhanced LLM Terminal RPG!{gfx.RESET}")
     print(f"{gfx.BRIGHT_BLACK}Featuring ASCII Scenery, Tactical Combat, Equipment, and Magic.{gfx.RESET}\n")
     
-    player_name = input(f"{gfx.BRIGHT_CYAN}Enter your hero's name [Default: Adventurer] > {gfx.RESET}").strip()
+    while True:
+        player_name = input(f"{gfx.BRIGHT_CYAN}Enter your hero's name [Default: Adventurer] > {gfx.RESET}").strip()
+        if not player_name:
+            player_name = "Adventurer"
+            break
+        is_valid, err = validate_action_text(player_name)
+        if is_valid:
+            break
+        print(f"{gfx.RED}❌ {err}{gfx.RESET}")
     
     engine = TextAdventureEngine()
-    if player_name:
-        engine.state.player_name = player_name
+    engine.state.player_name = player_name
         
     current_suggestions = [
         "Investigate the strange noises in the Tavern Cellar",
@@ -193,10 +205,11 @@ def main():
                 print(f" [{gfx.BRIGHT_YELLOW}{idx}{gfx.RESET}] {sugg}")
             print(f" [{gfx.BRIGHT_BLACK}C{gfx.RESET}] Character Sheet  │ [{gfx.BRIGHT_BLACK}I{gfx.RESET}] Inventory  │ [{gfx.BRIGHT_BLACK}S{gfx.RESET}] Spellbook  │ [{gfx.BRIGHT_BLACK}Q{gfx.RESET}] Quests  │ [{gfx.BRIGHT_BLACK}H{gfx.RESET}] Help")
             
-            # 5. Prompt User Input
-            user_input = input(f"\n{gfx.BRIGHT_GREEN}What do you do? > {gfx.RESET}").strip()
-            if not user_input:
-                continue
+            # 5. Prompt User Input with strict validation against symbols (@, &, etc.) and bad numbers
+            user_input = read_action_input(
+                f"\n{gfx.BRIGHT_GREEN}What do you do? > {gfx.RESET}",
+                max_suggestions=len(current_suggestions)
+            )
 
             cmd = user_input.lower()
             
@@ -204,16 +217,16 @@ def main():
             if cmd in ["quit", "exit"]:
                 print(f"\n{gfx.BRIGHT_YELLOW}Farewell, {engine.state.player_name}! May your blade stay sharp.{gfx.RESET}")
                 break
-            elif cmd in ["status", "stats", "sheet", "c"]:
+            elif cmd in ["status", "stats", "sheet", "c", "character"]:
                 show_character_sheet(engine)
                 continue
-            elif cmd in ["inventory", "inv", "bag", "items", "i"]:
+            elif cmd in ["inventory", "inv", "bag", "items", "item", "i"]:
                 manage_inventory(engine)
                 continue
-            elif cmd in ["spells", "magic", "spellbook", "s"]:
+            elif cmd in ["spells", "magic", "spellbook", "spell", "s"]:
                 show_spellbook(engine)
                 continue
-            elif cmd in ["quests", "quest", "journal", "q"]:
+            elif cmd in ["quests", "quest", "journal", "log", "q"]:
                 show_quest_log(engine)
                 continue
             elif cmd in ["save"]:
@@ -232,7 +245,7 @@ def main():
                 continue
                 
             # Quick Number Selection
-            if user_input.isdigit():
+            if user_input.isascii() and user_input.isdecimal():
                 choice_idx = int(user_input) - 1
                 if 0 <= choice_idx < len(current_suggestions):
                     user_input = current_suggestions[choice_idx]

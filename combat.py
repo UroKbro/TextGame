@@ -3,6 +3,7 @@ import random
 import sys
 from schema import GameState, EnemyState
 import graphics as gfx
+from input_utils import read_valid_input
 
 class CombatManager:
     def __init__(self, state: GameState, enemy: EnemyState):
@@ -81,8 +82,12 @@ class CombatManager:
                 print(f" [{idx}] {gfx.BRIGHT_GREEN}{sp['name']}{gfx.RESET} (Cost: {gfx.CYAN}{sp['cost']} MP{gfx.RESET}) - Restores {sp['heal']} HP")
         print(" [0] Cancel")
         
-        choice = input(f"{gfx.BRIGHT_YELLOW}Cast spell # > {gfx.RESET}").strip()
-        if not choice.isdigit() or choice == "0":
+        choice = read_valid_input(
+            f"{gfx.BRIGHT_YELLOW}Cast spell # > {gfx.RESET}",
+            ["0"],
+            numeric_range=range(1, len(spells) + 1),
+        )
+        if choice == "0":
             return False
             
         idx = int(choice) - 1
@@ -118,8 +123,12 @@ class CombatManager:
             print(f" [{idx}] {item}")
         print(" [0] Cancel")
         
-        choice = input(f"{gfx.BRIGHT_YELLOW}Use item # > {gfx.RESET}").strip()
-        if not choice.isdigit() or choice == "0":
+        choice = read_valid_input(
+            f"{gfx.BRIGHT_YELLOW}Use item # > {gfx.RESET}",
+            ["0"],
+            numeric_range=range(1, len(consumables) + 1),
+        )
+        if choice == "0":
             return False
             
         idx = int(choice) - 1
@@ -204,7 +213,17 @@ class CombatManager:
             print(f" [{gfx.BRIGHT_BLACK}5{gfx.RESET}] 🏃 Flee (Escape attempt)")
             
             action_took_place = False
-            choice = input(f"\n{gfx.BRIGHT_WHITE}Action [1-5] > {gfx.RESET}").strip().lower()
+            choice = read_valid_input(
+                f"\n{gfx.BRIGHT_WHITE}Action [1-5] > {gfx.RESET}",
+                [
+                    "1", "2", "3", "4", "5",
+                    "attack", "strike", "hit",
+                    "spell", "magic", "cast",
+                    "item", "use", "potion", "bag",
+                    "defend", "guard", "block",
+                    "flee", "run", "escape",
+                ],
+            )
             
             if choice in ["1", "attack", "strike", "hit"]:
                 self.player_attack()
@@ -227,16 +246,6 @@ class CombatManager:
                 else:
                     self.log(f"{gfx.RED}Failed to escape! {self.enemy.name} cuts off your path!{gfx.RESET}")
                     action_took_place = True
-            else:
-                # Allow free-form spell or item shorthand
-                if "heal" in choice:
-                    action_took_place = self.player_cast_spell()
-                elif "potion" in choice:
-                    action_took_place = self.player_use_item()
-                else:
-                    self.player_attack()
-                    action_took_place = True
-
             if not action_took_place:
                 continue
 

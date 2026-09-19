@@ -63,6 +63,7 @@ The configured model is `llama3` in `config.py`.
 - `quit` or `exit`: leave the game.
 
 During combat, choose an attack, spell, item, defend, or flee action when prompted.
+Invalid menu entries are rejected and the prompt is shown again until a listed option is selected.
 
 ## Project Layout
 

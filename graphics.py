@@ -198,6 +198,27 @@ LOCATION_SCENES = {
      | 🧪 📜  |   | 💎 🪙 |   {BRIGHT_WHITE}Shelves lined with glowing vials, sharp blades,{RESET}
     [=========┴===┴=======]   {BRIGHT_WHITE}and enchanted spell scrolls for sale.{RESET}""",
 
+    "forge": f"""{BRIGHT_RED}
+     |===|      /\\  🔥      {BRIGHT_YELLOW}╭───────────────────────────────╮{BRIGHT_RED}
+    ( ___ )    /  \\         {BRIGHT_YELLOW}│ ⚒️  OAKHAVEN IRONWORKS & FORGE│{BRIGHT_RED}
+   /|     |\\  / /\\ \\        {BRIGHT_YELLOW}╰───────────────────────────────╯{BRIGHT_RED}
+  (_|  🔨 |_)(_/__\\_)       {BRIGHT_BLACK}The clang of hammer on anvil echoes with heat.{BRIGHT_RED}
+    [=======] [======]      {BRIGHT_BLACK}Glowing steel plunged in quenching oil.{RESET}""",
+
+    "alchemy": f"""{BRIGHT_CYAN}
+       (  )       .---.     {BRIGHT_CYAN}╭───────────────────────────────╮{BRIGHT_CYAN}
+      ( () )     / === \\    {BRIGHT_CYAN}│ 🧪  MYSTIC ALCHEMY WORKSHOP   │{BRIGHT_CYAN}
+      |====|    /_______\\   {BRIGHT_CYAN}╰───────────────────────────────╯{BRIGHT_CYAN}
+     /  🧪  \\   | 🌿 🔮 |   {BRIGHT_WHITE}Alembies bubble with glowing iridescent distillates.{BRIGHT_CYAN}
+    [========]  [=======]   {BRIGHT_WHITE}Bundles of mountain herbs dry from ceiling rafters.{RESET}""",
+
+    "black_market": f"""{BRIGHT_MAGENTA}
+      .-------.             {BRIGHT_MAGENTA}╭───────────────────────────────╮{BRIGHT_MAGENTA}
+     / 🕶️   🗝️ \\            {BRIGHT_MAGENTA}│ 🗡️  SHADOW SYNDICATE DEN      │{BRIGHT_MAGENTA}
+    |  [===]  |   ☠️  🗡️    {BRIGHT_MAGENTA}╰───────────────────────────────╯{BRIGHT_MAGENTA}
+    |  |   |  |  [=====]    {BRIGHT_BLACK}Lanterns shrouded in dark silk cast dim shadows.{BRIGHT_MAGENTA}
+    '--'---'--'             {BRIGHT_BLACK}Rogue couriers exchange contraband in whispers.{RESET}""",
+
     "dungeon": f"""{MAGENTA}
     .-----------------.      {BRIGHT_MAGENTA}╭───────────────────────────────╮{MAGENTA}
    /  /\\           /\\  \\     {BRIGHT_MAGENTA}│ 💀  ABYSSAL CRYPT & DUNGEON   │{MAGENTA}
@@ -210,6 +231,12 @@ def get_location_scene(location_name: str) -> str:
     loc = location_name.lower()
     if "tavern" in loc or "inn" in loc or "oak" in loc:
         return LOCATION_SCENES["tavern"]
+    elif "forge" in loc or "smith" in loc or "ironworks" in loc:
+        return LOCATION_SCENES["forge"]
+    elif "alchemy" in loc or "lab" in loc or "apothecary" in loc:
+        return LOCATION_SCENES["alchemy"]
+    elif "black market" in loc or "syndicate" in loc or "hideout" in loc or "den" in loc:
+        return LOCATION_SCENES["black_market"]
     elif "cellar" in loc or "basement" in loc:
         return LOCATION_SCENES["cellar"]
     elif "forest" in loc or "woods" in loc or "grove" in loc or "wild" in loc:
@@ -320,11 +347,24 @@ def render_player_hud(state) -> str:
         f"{BRIGHT_BLACK}Armor:{RESET} {BRIGHT_WHITE}{state.equipped_armor}{RESET}"
     )
 
+    total_mats = sum(state.materials.values()) if hasattr(state, 'materials') and state.materials else 0
+    top_fac = "Neutral"
+    if hasattr(state, 'reputation') and state.reputation:
+        best_fac = max(state.reputation.items(), key=lambda x: x[1])
+        top_fac = f"{best_fac[0].split()[-1]} ({best_fac[1]:+d})"
+
+    craft_line = (
+        f"{BRIGHT_MAGENTA}🧪 Materials:{RESET} {BRIGHT_WHITE}{total_mats} items{RESET}  │  "
+        f"{BRIGHT_CYAN}🏛️ Top Rep:{RESET} {BRIGHT_WHITE}{top_fac}{RESET}  │  "
+        f"{BRIGHT_YELLOW}📜 Recipes:{RESET} {len(state.known_recipes) if hasattr(state, 'known_recipes') else 0}"
+    )
+
     lines = [
         f" {stat_badges}",
         f" {hp_line}    {mp_line}",
         f" {xp_line}",
-        f" {equip_line}"
+        f" {equip_line}",
+        f" {craft_line}"
     ]
     
     return draw_box(f"👤 {state.player_name} @ {state.location}", lines, width=w, border_color=CYAN)
